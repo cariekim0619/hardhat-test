@@ -1,50 +1,61 @@
-import hre, { ethers } from "hardhat";
+import hre from "hardhat"
+import { expect } from "chai"
+import { MyToken } from "../typechain-types"
+import { HardhatEthersSigner } from "@nomicfoundation/hardhat-ethers/signers"
 
-describe("hardhat-test", () => {
-  it("hardhat ethers test", async () => {
-    // const myFirstWallet = hre.ethers.Wallet.createRandom();
-    const signers = await hre.ethers.getSigners();
+const mintingAmount = 100n;
+const decimals = 18n;
 
-    const bobWallet = signers[0];
-    const aliceWallet = signers[1];
-    const tx = {
-        from:bobWallet.address,
-        to:aliceWallet.address,
-        value:hre.ethers.parseEther("100"),
-    };
-    // console.log(signers);
-    // console.log(signers.length);
-    const txHash = await bobWallet.sendTransaction(tx);
-    const receipt = txHash.wait();
-    // console.log(hre.ethers.provider.getTransaction(txHash.hash));
-    // console.log("-----");
-    // console.log(receipt);
-  });
-  
-  it("ethers test", async () => {
-    const provider = new ethers.JsonRpcProvider("http://localhost:8545");
+describe("mytoken deploy", () => {
+    let myTokenC:MyToken;
+    let signers:HardhatEthersSigner[];
 
-    const bobWallet = new ethers.Wallet(
-        "0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80",
-        provider
-    );
-    const aliceWallet = new ethers.Wallet("0x59c6995e998f97a5a0044966f0945389dc9e86dae88c7a8412f4603b6b78690d");
-    
-    const tx = {
-        from:bobWallet.address,
-        to:aliceWallet.address,
-        value:ethers.parseEther("100"),
-        chainId:31337,
-    };
-    const populatedTx = await bobWallet.populateTransaction(tx);
-    const signedTx = await bobWallet.signTransaction(populatedTx);
-    const txHash = await provider.send("eth_sendRawTransaction", [signedTx]);
-    
-    console.log(
-        ethers.formatEther(await provider.getBalance(aliceWallet.address))
-    );
-    console.log(
-        ethers.formatEther(await provider.getBalance(bobWallet.address))
-    );
-});
+    beforeEach("should deploy", async () => {
+        signers = await hre.ethers.getSigners();
+        myTokenC = await hre.ethers.deployContract("MyToken", [
+            "MyToken",
+            "MT",
+            decimals,
+            mintingAmount,
+        ]);
+    });
+
+    describe("Approve & TransferFrom", () => {
+        it("should approve signer1 to spend signer0's 10 MT", async () => {
+            const signer0 = signers[0];
+            const signer1 = signers[1];
+
+            await expect(myTokenC.connect(signer0).approve(signer1.address,hre.ethers.parseUnits("10", Number(decimals)))).to.emit(myTokenC, "Approval").withArgs(signer1.address, hre.ethers.parseUnits("10", Number(decimals)));
+        });
+
+        it("should allow signer1 to transferFrom signer0 to signer1", async () => {
+            const signer0 = signers[0];
+            const signer1 = signers[1];
+            const amount = hre.ethers.parseUnits("10", Number(decimals));
+
+            await myTokenC.connect(signer0).approve(signer1.address, amount);
+
+            await expect(myTokenC.connect(signer1).transferFrom(signer0.address, signer1.address, amount)).to.emit(myTokenC, "Transfer").withArgs(signer0.address, signer1.address, amount);
+
+            const balance0 = await myTokenC.balanceOf(signer0.address);
+            const balance1 = await myTokenC.balanceOf(signer1.address);
+
+            console.log("signer0 balance:", balance0.toString());
+            console.log("signer1 balance:", balance1.toString());
+
+            expect(balance1).equal(amount);
+            expect(balance0).equal(hre.ethers.parseUnits(mintingAmount.toString(), Number(decimals)) - amount);
+        });
+
+        it("should be reverted if allowance insufficient", async () => {
+            const signer0 = signers[0];
+            const signer1 = signers[1];
+            const amount = hre.ethers.parseUnits("10", Number(decimals));
+
+            await myTokenC.connect(signer0).approve(signer1.address, amount);
+            await myTokenC.connect(signer1).transferFrom(signer0.address, signer1.address, amount);
+
+            await expect(myTokenC.connect(signer1).transferFrom(signer0.address, signer1.address, amount)).to.be.revertedWith("insufficient allowance");
+        });
+    });
 });
