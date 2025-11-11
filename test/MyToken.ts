@@ -34,14 +34,20 @@ describe("mytoken deploy", () => {
         it("should return 0 totalSupply", async () => {
             expect(await myTokenC.totalSupply()).equal(MINTING_AMOUNT * 10n ** DECIMALS);
         });
-    })
+    });
 
     describe("Mint", () => {
         it("should return 1MT balance for signer 0", async () => {
             const signer0 = signers[0];
             expect(await myTokenC.balanceOf(signer0)).equal(MINTING_AMOUNT* 10n ** DECIMALS);
         });
-    })
+
+        it("should return or revert when minting infinitly", async () => {
+            const signer2 = signers[2];
+            const mintingAgainAmount = hre.ethers.parseUnits("100", DECIMALS);
+            await expect(myTokenC.connect(signer2).mint(mintingAgainAmount, signer2.address)).to.be.revertedWith("You are not manageble this token");
+        });
+    });
 
     describe("Transfer", () => {
         it("should have 0.5MT", async () => {
