@@ -40,8 +40,8 @@ describe("mytoken deploy", () => {
             const balance0 = await myTokenC.balanceOf(signer0.address);
             const balance1 = await myTokenC.balanceOf(signer1.address);
 
-            console.log("signer0 balance:", balance0.toString());
-            console.log("signer1 balance:", balance1.toString());
+            // console.log("signer0 balance:", balance0.toString());
+            // console.log("signer1 balance:", balance1.toString());
 
             expect(balance1).equal(amount);
             expect(balance0).equal(hre.ethers.parseUnits(mintingAmount.toString(), Number(decimals)) - amount);
