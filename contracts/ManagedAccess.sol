@@ -15,7 +15,7 @@ pragma solidity ^0.8.28;
     }
 
     modifier onlyManager() {
-        require(msg.sender == manager, "You are not manageble this token");
+        require(msg.sender == manager, "You are not authorized to manage this contract");
         _;
     }
 }

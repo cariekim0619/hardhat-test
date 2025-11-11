@@ -45,7 +45,7 @@ describe("mytoken deploy", () => {
         it("should return or revert when minting infinitly", async () => {
             const signer2 = signers[2];
             const mintingAgainAmount = hre.ethers.parseUnits("100", DECIMALS);
-            await expect(myTokenC.connect(signer2).mint(mintingAgainAmount, signer2.address)).to.be.revertedWith("You are not manageble this token");
+            await expect(myTokenC.connect(signer2).mint(mintingAgainAmount, signer2.address)).to.be.revertedWith("You are not authorized to manage this contract");
         });
     });
 
