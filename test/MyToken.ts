@@ -2,9 +2,7 @@ import hre from "hardhat"
 import { expect } from "chai"
 import { MyToken } from "../typechain-types"
 import { HardhatEthersSigner } from "@nomicfoundation/hardhat-ethers/signers"
-
-const MINTINGAMOUNT = 100n;
-const DECIMALS = 18n;
+import { DECIMALS, MINTING_AMOUNT } from "./constant"
 
 describe("mytoken deploy", () => {
     let myTokenC:MyToken;
@@ -16,7 +14,7 @@ describe("mytoken deploy", () => {
             "MyToken",
             "MT",
             DECIMALS,
-            MINTINGAMOUNT,
+            MINTING_AMOUNT,
         ]);
     });
 
@@ -34,14 +32,14 @@ describe("mytoken deploy", () => {
         });
 
         it("should return 0 totalSupply", async () => {
-            expect(await myTokenC.totalSupply()).equal(MINTINGAMOUNT * 10n ** DECIMALS);
+            expect(await myTokenC.totalSupply()).equal(MINTING_AMOUNT * 10n ** DECIMALS);
         });
     })
 
     describe("Mint", () => {
         it("should return 1MT balance for signer 0", async () => {
             const signer0 = signers[0];
-            expect(await myTokenC.balanceOf(signer0)).equal(MINTINGAMOUNT* 10n ** DECIMALS);
+            expect(await myTokenC.balanceOf(signer0)).equal(MINTING_AMOUNT* 10n ** DECIMALS);
         });
     })
 
@@ -67,7 +65,7 @@ describe("mytoken deploy", () => {
 
         it ("should be reverted with insufficient balance error", async () => {
             const signer1 = signers[1];
-            await expect(myTokenC.transfer(hre.ethers.parseUnits((MINTINGAMOUNT + 1n).toString(), DECIMALS), signer1.address)).to.be.revertedWith("insufficient balance");
+            await expect(myTokenC.transfer(hre.ethers.parseUnits((MINTING_AMOUNT + 1n).toString(), DECIMALS), signer1.address)).to.be.revertedWith("insufficient balance");
         });
     });
 
